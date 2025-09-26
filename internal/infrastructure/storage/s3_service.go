@@ -20,9 +20,17 @@ type S3Service struct {
 }
 
 func NewS3Service(bucket string) (*S3Service, error) {
+	endpoint := os.Getenv("LOCALSTACK_ENDPOINT")
+	if endpoint == "" {
+		endpoint = "http://localhost:4566"
+	}
+
+	// Manter host.docker.internal quando estiver rodando dentro do container
+	// (será substituído pela variável de ambiente LOCALSTACK_ENDPOINT)
+
 	sess, err := session.NewSession(&aws.Config{
 		Region:           aws.String("us-east-1"),
-		Endpoint:         aws.String("http://localhost:4566"), // LocalStack endpoint
+		Endpoint:         aws.String(endpoint), // LocalStack endpoint
 		S3ForcePathStyle: aws.Bool(true),
 		Credentials:      credentials.NewStaticCredentials("test", "test", ""),
 	})

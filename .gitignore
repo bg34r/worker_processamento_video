@@ -31,8 +31,6 @@ logs/
 
 # Arquivos de saída
 outputs/
-uploads/
-coverage/
 
 # Dados do LocalStack
 localstack-data/

@@ -1,17 +1,31 @@
-services:
-  localstack:
-    image: localstack/localstack:2.3
-    container_name: localstack-main
-    ports:
-      - "4566:4566"
-    environment:
-      - SERVICES=s3,sqs
-      - DEBUG=1
-      - LOCALSTACK_HOST=localhost
-      - DOCKER_HOST=unix:///var/run/docker.sock
-    volumes:
-      - "localstack-data:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+version: '3.8'
 
-volumes:
-  localstack-data:
+services:
+  # Worker de Processamento de Vídeos (standalone)
+  video-processing-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: video-processing-worker-standalone
+    ports:
+      - "8083:80"      # Nginx para status/health check
+    env_file:
+      - .env
+    environment:
+      # Override específicas para Docker se necessário
+      - LOCALSTACK_ENDPOINT=http://host.docker.internal:4566
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "localhost:172.21.0.4"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/_health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  default:
+    name: notification-service-hackaton_default
+    external: true
