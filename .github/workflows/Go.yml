@@ -93,29 +93,6 @@ jobs:
             coverage
             coverage_report.txt
 
-  build:
-    needs: test-coverage
-    if: needs.test-coverage.outputs.coverage-passed == 'true'
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Fazer checkout do código
-        uses: actions/checkout@v4
-        
-      - name: Configurar Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-          
-      - name: Compilar aplicação
-        run: go build -v -o main ./cmd/server/main.go
-  
-      - name: Upload do artefato de build
-        uses: actions/upload-artifact@v4
-        with:
-          name: programa
-          path: main 
-
   coverage-gate:
     needs: test-coverage
     runs-on: ubuntu-latest
