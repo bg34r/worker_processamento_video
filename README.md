@@ -109,9 +109,9 @@ internal/
   ├── queue/         # SQS service
   ├── storage/       # S3 + ZIP services
   └── video/         # FFmpeg service
-k8s/                 # Kubernetes configs
-.github/workflows/   # CI/CD
-docker-compose.yml   # Ambiente local
+ k8s/                 # Kubernetes configs
+ .github/workflows/   # CI/CD
+ docker-compose.yml   # Ambiente local
 ```
 
 ## 🛠 Troubleshooting
