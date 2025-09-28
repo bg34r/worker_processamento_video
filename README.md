@@ -95,7 +95,7 @@ kubectl top pods
 
 # Limpeza
 kubectl delete -f k8s/
-
+```
 
 
 ## 📁 Estrutura do Projeto
