@@ -116,20 +116,6 @@ jobs:
           name: programa
           path: main 
 
-  docker:
-    needs: [test-coverage, build]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Fazer checkout do código
-        uses: actions/checkout@v4
-        
-      - name: Build Docker image
-        run: |
-          echo "🐳 Construindo imagem Docker..."
-          docker build -t video-worker:ci .
-          echo "✅ Imagem construída com sucesso!"
-
   coverage-gate:
     needs: test-coverage
     runs-on: ubuntu-latest
