@@ -1,0 +1,127 @@
+name: Go
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  
+jobs:
+  test-coverage:
+    runs-on: ubuntu-latest
+    outputs:
+      coverage-passed: ${{ steps.coverage-check.outputs.passed }}
+      coverage-percentage: ${{ steps.coverage-check.outputs.coverage }}
+    
+    steps:
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Instalar dependências
+        run: go mod download
+
+      - name: Executar testes com cobertura
+        run: |
+          echo "🔍 Executando todos os testes com cobertura..."
+          go test ./internal/infrastructure/... -coverprofile=coverage -covermode=count -v
+          echo "📊 Gerando relatório..."
+          go tool cover -func=coverage | tee coverage_report.txt
+          echo "📋 Relatório gerado:"
+          cat coverage_report.txt
+
+      - name: Verificar limite de cobertura
+        id: coverage-check
+        run: |
+          echo "📊 Analisando cobertura de testes..."
+          
+          if [ ! -f coverage ]; then
+            echo "❌ Arquivo coverage não foi encontrado!"
+            echo "passed=false" >> $GITHUB_OUTPUT
+            echo "coverage=0" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          COVERAGE=$(go tool cover -func=coverage | grep total | awk '{print $3}' | sed 's/%//')
+          
+          if [ -z "$COVERAGE" ]; then
+            echo "❌ Não foi possível extrair a porcentagem de cobertura!"
+            echo "passed=false" >> $GITHUB_OUTPUT
+            echo "coverage=0" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "🎯 RESULTADO DA COBERTURA:"
+          echo "   • Cobertura atual: ${COVERAGE}%"
+          echo "   • Limite mínimo: 60%"
+          
+          # Sempre definir o output de coverage
+          echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
+          
+          if awk "BEGIN {exit !($COVERAGE >= 60)}"; then
+            echo ""
+            echo "✅ SUCESSO: Cobertura de ${COVERAGE}% atende o limite mínimo de 60%"
+            echo "🚀 Pull Request pode prosseguir!"
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo ""
+            echo "❌ FALHA: Cobertura de ${COVERAGE}% está abaixo do limite mínimo de 60%"
+            echo "📈 Adicione mais testes para atingir o requisito"
+            echo "passed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Análise SonarCloud
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Upload dos relatórios de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: relatorio-cobertura
+          path: |
+            coverage
+            coverage_report.txt
+
+  coverage-gate:
+    needs: test-coverage
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Controle de Cobertura
+        run: |
+          echo "🎯 GATE DE COBERTURA - Resultado Final"
+          echo "════════════════════════════════════════"
+          
+          # Verificação mais robusta
+          COVERAGE_PASSED="${{ needs.test-coverage.outputs.coverage-passed }}"
+          COVERAGE_PERCENTAGE="${{ needs.test-coverage.outputs.coverage-percentage }}"
+          
+          if [ "$COVERAGE_PASSED" != "true" ]; then
+            echo "❌ STATUS: REJEITADO"
+            echo "📊 Cobertura: ${COVERAGE_PERCENTAGE}% (abaixo de 60%)"
+            echo "🚫 Pull Request bloqueado por cobertura insuficiente"
+            echo ""
+            echo "📋 PRÓXIMOS PASSOS:"
+            echo "   1. Adicione mais testes unitários"
+            echo "   2. Execute 'go test -cover ./internal/infrastructure/...' localmente"
+            echo "   3. Foque nos arquivos com menor cobertura"
+            echo "   4. Faça novo commit quando atingir 60%+"
+            exit 1
+          else
+            echo "✅ STATUS: APROVADO"
+            echo "📊 Cobertura: ${COVERAGE_PERCENTAGE}% (acima de 60%)"
+            echo "🎉 Requisitos de cobertura atendidos"
+            echo "🚀 PR liberado para merge na branch main!"
+          fi

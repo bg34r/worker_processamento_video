@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"worker/internal/domain/services"
 )
 
 type ZipService interface {
@@ -14,7 +13,7 @@ type ZipService interface {
 
 type zipService struct{}
 
-func NewZipService() services.ZipService {
+func NewZipService() ZipService {
 	return &zipService{}
 }
 

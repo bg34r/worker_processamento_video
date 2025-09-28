@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
-	"worker/internal/domain/services"
 )
 
 type FrameExtractor interface {
@@ -13,7 +12,7 @@ type FrameExtractor interface {
 
 type ffmpegExtractor struct{}
 
-func NewFFmpegExtractor() services.FrameExtractor {
+func NewFFmpegExtractor() FrameExtractor {
 	return &ffmpegExtractor{}
 }
 

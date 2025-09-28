@@ -1,0 +1,47 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: video-worker-hpa
+  namespace: video-processing
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: video-worker
+  minReplicas: 1    # Mínimo 1 worker sempre ativo
+  maxReplicas: 20   # Máximo 20 workers (escalável!)
+  metrics:
+  # Scaling baseado na CPU
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Escala quando CPU > 70%
+  
+  # Scaling baseado na memória
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Escala quando memória > 80%
+  
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60   # Aguarda 1min antes de escalar para cima
+      policies:
+      - type: Percent
+        value: 100    # Pode dobrar o número de pods
+        periodSeconds: 60
+      - type: Pods
+        value: 5      # Ou adicionar até 5 pods por vez
+        periodSeconds: 60
+      selectPolicy: Max
+    
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Aguarda 5min antes de reduzir
+      policies:
+      - type: Percent
+        value: 50     # Reduz até 50% dos pods
+        periodSeconds: 60

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worker de Processamento - Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .status-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status-ok {
+            border-left: 4px solid #4CAF50;
+        }
+        .status-warning {
+            border-left: 4px solid #FF9800;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #666;
+        }
+        .value {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎬 Worker de Processamento de Vídeos</h1>
+    
+    <div class="status-card status-ok">
+        <h2>📊 Status do Sistema</h2>
+        <div class="info">
+            <span class="label">Status:</span>
+            <span class="value">🟢 Ativo</span>
+        </div>
+        <div class="info">
+            <span class="label">Serviço:</span>
+            <span class="value">Worker de Processamento</span>
+        </div>
+        <div class="info">
+            <span class="label">Bucket S3:</span>
+            <span class="value">video-service-bucket</span>
+        </div>
+        <div class="info">
+            <span class="label">Fila SQS:</span>
+            <span class="value">video-processing-queue</span>
+        </div>
+    </div>
+
+    <div class="status-card">
+        <h2>⚙️ Configuração</h2>
+        <div class="info">
+            <span class="label">LocalStack:</span>
+            <span class="value">http://localhost:4566</span>
+        </div>
+        <div class="info">
+            <span class="label">Região AWS:</span>
+            <span class="value">us-east-1</span>
+        </div>
+        <div class="info">
+            <span class="label">Intervalo de Verificação:</span>
+            <span class="value">5 segundos</span>
+        </div>
+    </div>
+
+    <div class="status-card">
+        <h2>🔄 Funcionamento</h2>
+        <p>Este worker monitora automaticamente a fila SQS <code>video-processing-queue</code> e processa vídeos quando mensagens são recebidas.</p>
+        <p><strong>Fluxo:</strong></p>
+        <ol>
+            <li>Recebe mensagem da fila SQS</li>
+            <li>Baixa vídeo do bucket S3</li>
+            <li>Extrai frames usando FFmpeg</li>
+            <li>Compacta frames em ZIP</li>
+            <li>Faz upload do ZIP para S3 (pasta processed/)</li>
+            <li>Remove mensagem da fila</li>
+        </ol>
+    </div>
+
+    <script>
+        // Auto-refresh a cada 30 segundos
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
