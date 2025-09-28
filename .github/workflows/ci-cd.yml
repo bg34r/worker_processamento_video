@@ -57,7 +57,7 @@ jobs:
         fi
 
     - name: SonarQube Analysis
-      uses: sonarqube-community-action/sonarqube-scanner-action@master
+      uses: sonarqube/sonarqube-scanner-action@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -65,7 +65,7 @@ jobs:
 
     - name: SonarQube Quality Gate
       id: sonarqube-quality-gate-check
-      uses: sonarqube-community-action/sonarqube-quality-gate-action@master
+      uses: sonarqube/sonarqube-quality-gate-action@v1
       timeout-minutes: 5
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
