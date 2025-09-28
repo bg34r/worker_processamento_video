@@ -98,10 +98,8 @@ kubectl delete -f k8s/
 
 
 
-
-
 ## 📁 Estrutura do Projeto
-
+```
 cmd/server/            # Aplicação principal
 internal/
   ├── notification/    # Kafka notifications  
@@ -111,7 +109,7 @@ internal/
 k8s/                   # Kubernetes configs
 .github/workflows/     # CI/CD
 docker-compose.yml     # Ambiente local
-
+```
 ## 🛠 Troubleshooting
 
 **Problemas comuns:**
