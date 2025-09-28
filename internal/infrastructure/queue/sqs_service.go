@@ -20,6 +20,9 @@ type VideoMessage struct {
 	FilePath    string `json:"file_path"`
 	DataCriacao string `json:"data_criacao"`
 	DataUpload  string `json:"data_upload"`
+	Email       string `json:"email"`
+	Username    string `json:"username"`
+	ID          int    `json:"id"`
 	VideoKey    string // Campo derivado do file_path
 	VideoID     string // Campo para o ReceiptHandle
 }

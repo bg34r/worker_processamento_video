@@ -16,7 +16,7 @@ services:
       - LOCALSTACK_ENDPOINT=http://host.docker.internal:4566
     extra_hosts:
       - "host.docker.internal:host-gateway"
-      - "localhost:172.21.0.4"
+      - "localhost:172.21.0.5"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/_health"]
