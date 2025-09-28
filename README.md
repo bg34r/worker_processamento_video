@@ -102,17 +102,15 @@ kubectl delete -f k8s/
 
 ## 📁 Estrutura do Projeto
 
-```
-cmd/server/          # Aplicação principal
+cmd/server/            # Aplicação principal
 internal/
-  ├── notification/  # Kafka notifications  
-  ├── queue/         # SQS service
-  ├── storage/       # S3 + ZIP services
-  └── video/         # FFmpeg service
- k8s/                 # Kubernetes configs
- .github/workflows/   # CI/CD
- docker-compose.yml   # Ambiente local
-```
+  ├── notification/    # Kafka notifications  
+  ├── queue/           # SQS service
+  ├── storage/         # S3 + ZIP services
+  └── video/           # FFmpeg service
+k8s/                   # Kubernetes configs
+.github/workflows/     # CI/CD
+docker-compose.yml     # Ambiente local
 
 ## 🛠 Troubleshooting
 
