@@ -59,8 +59,9 @@ func NewSQSService(queueURL string) (*SQSService, error) {
 func (s *SQSService) ReceiveMessages() ([]*VideoMessage, error) {
 	result, err := s.sqsClient.ReceiveMessage(&sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(s.queueURL),
-		MaxNumberOfMessages: aws.Int64(10),
-		WaitTimeSeconds:     aws.Int64(20), // Long polling
+		MaxNumberOfMessages: aws.Int64(1),   // Processar uma mensagem por vez
+		WaitTimeSeconds:     aws.Int64(20),  // Long polling
+		VisibilityTimeout:   aws.Int64(300), // 5 minutos - tempo suficiente para processar
 	})
 	if err != nil {
 		return nil, err

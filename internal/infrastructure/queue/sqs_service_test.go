@@ -172,9 +172,9 @@ func TestVideoMessageJSONSerialization(t *testing.T) {
 func TestVideoKeyExtractionLogic(t *testing.T) {
 	// Testar a lógica de extração de VideoKey do FilePath
 	testCases := []struct {
-		name         string
-		filePath     string
-		expectedKey  string
+		name        string
+		filePath    string
+		expectedKey string
 	}{
 		{
 			name:        "Caminho S3 padrão",
@@ -363,14 +363,14 @@ func TestSQSServiceStructureValidation(t *testing.T) {
 func TestVideoMessageWithSpecialCharacters(t *testing.T) {
 	// Testar VideoMessage com caracteres especiais
 	videoMsg := VideoMessage{
-		IDVideo:     "video-special-chars",
-		Titulo:      "Título com acentos áéíóú e símbolos #@$%",
-		Autor:       "Autor com \"aspas\" e \n quebras de linha",
-		Status:      "PENDING",
-		FilePath:    testFilePath,
-		Email:       "test+special@example.com",
-		Username:    "user_with-special.chars",
-		ID:          999,
+		IDVideo:  "video-special-chars",
+		Titulo:   "Título com acentos áéíóú e símbolos #@$%",
+		Autor:    "Autor com \"aspas\" e \n quebras de linha",
+		Status:   "PENDING",
+		FilePath: testFilePath,
+		Email:    "test+special@example.com",
+		Username: "user_with-special.chars",
+		ID:       999,
 	}
 
 	// Deve conseguir serializar mesmo com caracteres especiais

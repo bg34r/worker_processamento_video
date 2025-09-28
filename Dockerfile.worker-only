@@ -1,0 +1,30 @@
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN go build -o worker ./cmd/server/main.go
+
+# Etapa final apenas com Go worker (sem Nginx)
+FROM alpine:latest
+
+WORKDIR /app
+
+# Instalar apenas ffmpeg (removendo nginx e dependências desnecessárias)
+RUN apk add --no-cache bash curl ffmpeg
+
+COPY --from=builder /app/worker /app/worker
+COPY scripts/start-worker-only.sh /app/start.sh
+
+# Criar diretórios necessários e dar permissões
+RUN mkdir -p /app/outputs /app/temp && \
+    chmod +x /app/start.sh
+
+# Sem exposição de portas (apenas worker processando)
+# EXPOSE removido para eliminar conflitos
+
+# Usar exec form com script
+CMD ["bash", "/app/start.sh"]

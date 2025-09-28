@@ -9,6 +9,8 @@ worker.exe
 
 # Arquivos de teste
 *.test
+test_*
+*.exe
 
 # Output da cobertura de teste Go
 *.out
@@ -22,6 +24,7 @@ go.work
 # Arquivos temporários
 temp/
 tmp/
+temp-download/
 *.tmp
 *.temp
 
@@ -70,3 +73,11 @@ Thumbs.db
 *.wmv
 *.flv
 *.webm
+
+# Cache e dados temporários
+hsperfdata_*/
+node-compile-cache/
+localstack-s3-storage/
+
+# Arquivos SQLite temporários
+sqlite-*-*.so

@@ -1,22 +1,71 @@
-version: '3.8'
-
 services:
-  # Worker de Processamento de Vídeos (standalone)
-  video-processing-worker:
+  # Worker 1 - Processamento de Vídeos
+  video-processer-worker-1:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: video-processing-worker-standalone
+    container_name: video-processer-worker-1
+    ports:
+      - "8081:80"      # Nginx para status/health check
+    env_file:
+      - .env
+    environment:
+      - LOCALSTACK_ENDPOINT=http://host.docker.internal:4566
+      - WORKER_ID=1
+      - WORKER_NAME=video-processer-worker-1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "localhost:172.21.0.4"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/_health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Worker 2 - Processamento de Vídeos
+  video-processer-worker-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: video-processer-worker-2
+    ports:
+      - "8082:80"      # Nginx para status/health check
+    env_file:
+      - .env
+    environment:
+      - LOCALSTACK_ENDPOINT=http://host.docker.internal:4566
+      - WORKER_ID=2
+      - WORKER_NAME=video-processer-worker-2
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "localhost:172.21.0.4"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/_health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Worker 3 - Processamento de Vídeos
+  video-processer-worker-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: video-processer-worker-3
     ports:
       - "8083:80"      # Nginx para status/health check
     env_file:
       - .env
     environment:
-      # Override específicas para Docker se necessário
       - LOCALSTACK_ENDPOINT=http://host.docker.internal:4566
+      - WORKER_ID=3
+      - WORKER_NAME=video-processer-worker-3
     extra_hosts:
       - "host.docker.internal:host-gateway"
-      - "localhost:172.21.0.5"
+      - "localhost:172.21.0.4"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/_health"]

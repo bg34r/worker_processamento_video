@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: video-worker
+  namespace: video-processing
+  labels:
+    app: video-worker
+spec:
+  replicas: 3  # Múltiplas réplicas sem conflito de porta
+  selector:
+    matchLabels:
+      app: video-worker
+  template:
+    metadata:
+      labels:
+        app: video-worker
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: video-worker
+        image: video-worker:worker-only
+        imagePullPolicy: Never  # Para desenvolvimento local
+        env:
+        - name: WORKER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name  # Usa o nome do pod como ID único
+        - name: WORKER_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        envFrom:
+        - configMapRef:
+            name: video-worker-config
+        resources:
+          requests:
+            cpu: 200m      # CPU mínima aumentada
+            memory: 512Mi  # Memória mínima dobrada
+          limits:
+            cpu: 2000m     # CPU máxima (2 cores)
+            memory: 4Gi    # Memória máxima quadruplicada
+        volumeMounts:
+        - name: temp-storage
+          mountPath: /app/temp
+        - name: output-storage
+          mountPath: /app/outputs
+      volumes:
+      - name: temp-storage
+        emptyDir: {}  # Armazenamento temporário por pod
+      - name: output-storage
+        emptyDir: {}
+      restartPolicy: Always

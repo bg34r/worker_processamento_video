@@ -1,0 +1,55 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: video-worker-scaler
+  namespace: video-processing
+spec:
+  scaleTargetRef:
+    name: video-worker
+  minReplicaCount: 1     # Mínimo 1 worker
+  maxReplicaCount: 50    # Máximo 50 workers (alta escalabilidade!)
+  cooldownPeriod: 300    # 5min cooldown após scale down
+  pollingInterval: 30    # Verifica a fila a cada 30s
+  
+  triggers:
+  # Scaling baseado no tamanho da fila SQS
+  - type: aws-sqs-queue
+    metadata:
+      queueURL: "http://172.22.0.4:4566/000000000000/video-processing-queue"
+      queueLength: "1"      # 1 worker para cada mensagem na fila
+      awsRegion: "us-east-1"
+      awsEndpoint: "http://172.22.0.4:4566"
+    authenticationRef:
+      name: aws-credentials
+  
+  # Scaling adicional baseado em CPU durante picos
+  - type: cpu
+    metricType: Utilization
+    metadata:
+      value: "60"  # Adiciona workers se CPU > 60% (mais sensível)
+
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: aws-credentials
+  namespace: video-processing
+spec:
+  secretTargetRef:
+  - parameter: awsAccessKeyID
+    name: aws-secrets
+    key: aws-access-key-id
+  - parameter: awsSecretAccessKey
+    name: aws-secrets
+    key: aws-secret-access-key
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-secrets
+  namespace: video-processing
+type: Opaque
+data:
+  aws-access-key-id: dGVzdA==        # base64: "test"
+  aws-secret-access-key: dGVzdA==    # base64: "test"
