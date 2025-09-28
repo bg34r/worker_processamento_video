@@ -81,3 +81,11 @@ localstack-s3-storage/
 
 # Arquivos SQLite temporários
 sqlite-*-*.so
+
+# Relatórios de cobertura e SonarQube
+coverage*
+coverage.out
+coverage.html
+coverage_report.txt
+.scannerwork/
+sonar-report.json

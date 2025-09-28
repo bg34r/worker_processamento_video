@@ -505,12 +505,71 @@ docker exec -e AWS_ACCESS_KEY_ID=test -e AWS_SECRET_ACCESS_KEY=test -e AWS_DEFAU
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-## 👥 Autores
+## � Qualidade de Código e Testes
 
-- **Bruno** - Desenvolvimento inicial
+### Cobertura de Testes
+
+Este projeto mantém padrões rigorosos de qualidade:
+
+- **Cobertura mínima do repositório**: 60%
+- **Cobertura mínima para código novo**: 40%
+- **Análise estática**: SonarQube
+
+### Executando Testes Localmente
+
+```bash
+# PowerShell (Windows)
+.\test-coverage.ps1
+
+# Bash (Linux/macOS)  
+./test-coverage.sh
+
+# Apenas testes (sem SonarQube)
+.\test-coverage.ps1 -OnlyTests
+
+# Com SonarQube
+.\test-coverage.ps1 -SonarToken "seu_token_aqui"
+```
+
+### Relatórios Gerados
+
+- `coverage.out` - Cobertura para SonarQube
+- `coverage.html` - Relatório visual de cobertura  
+- `coverage_report.txt` - Relatório texto
+
+### CI/CD Pipeline
+
+O projeto utiliza GitHub Actions com:
+
+1. **Testes automatizados** com LocalStack
+2. **Verificação de cobertura** (60% repositório, 40% código novo)
+3. **Análise SonarQube** com Quality Gates
+4. **Scan de segurança** com gosec
+5. **Build Docker** para ambientes dev e k8s
+6. **Deploy automático** para staging/produção
+
+### Configuração SonarQube
+
+Para usar SonarQube localmente:
+
+1. Configure as variáveis de ambiente:
+```bash
+export SONAR_TOKEN=seu_token_sonarqube
+export SONAR_HOST_URL=http://localhost:9000
+```
+
+2. Execute a análise:
+```bash
+./test-coverage.sh
+```
+
+## �👥 Autores
+
+- **Bruno** - Desenvolvimento inicial e infraestrutura Kubernetes
 - **Iana**  - Desenvolvimento inicial
 - **Juliano** - Desenvolvimento inicial
 - **Rafaelle** - Desenvolvimento inicial
+
 ---
 
 **Nota**: Este projeto foi desenvolvido como parte do Hackathon FIAP e utiliza LocalStack para simular serviços AWS em ambiente local.
