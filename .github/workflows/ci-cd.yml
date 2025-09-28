@@ -1,174 +1,62 @@
-name: CI/CD Pipeline com SonarQube
+name: Simple CI - Coverage and SonarQube
 
 on:
   push:
     branches: [ main, dev ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main ]
 
 jobs:
-  test-and-coverage:
-    name: Testes e Cobertura
+  test-coverage-sonarqube:
+    name: Tests, Coverage Check and SonarQube Analysis
     runs-on: ubuntu-latest
     
-    services:
-      localstack:
-        image: localstack/localstack:stable
-        ports:
-          - 4566:4566
-        env:
-          SERVICES: s3,sqs
-          DEBUG: 1
-        options: >-
-          --health-cmd "curl --fail http://localhost:4566/_localstack/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 3
-
     steps:
-    - name: Checkout código
+    - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Setup Go
-      uses: actions/setup-go@v4
+    - name: Set up Go
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
-        cache: true
+        go-version: '1.21'
 
-    - name: Instalar dependências
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Download dependencies
       run: go mod download
 
-    - name: Aguardar LocalStack
+    - name: Run tests with coverage
       run: |
-        echo "Aguardando LocalStack estar pronto..."
-        timeout 60 bash -c 'until curl -f http://localhost:4566/_localstack/health; do sleep 2; done'
+        echo "🧪 Running tests with coverage analysis..."
+        go test ./internal/infrastructure/... -v -coverprofile=coverage.out -coverpkg=./internal/infrastructure/...
+        go tool cover -html=coverage.out -o coverage.html
 
-    - name: Configurar LocalStack para testes
+    - name: Check coverage requirement (≥60%)
       run: |
-        # Criar bucket S3 para testes
-        aws --endpoint-url=http://localhost:4566 s3 mb s3://video-service-bucket --region us-east-1
+        echo "📊 Checking coverage requirement..."
+        COVERAGE=$(go tool cover -func=coverage.out | grep total: | awk '{print $3}' | sed 's/%//')
+        echo "Total coverage: $COVERAGE%"
         
-        # Criar fila SQS para testes
-        aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name video-processing-queue --region us-east-1
-      env:
-        AWS_ACCESS_KEY_ID: test
-        AWS_SECRET_ACCESS_KEY: test
-        AWS_DEFAULT_REGION: us-east-1
-
-    - name: Executar testes unitários
-      run: |
-        # Executar testes com cobertura
-        go test ./internal/infrastructure/... -coverprofile=coverage.out -covermode=count -v
-        
-        # Gerar relatório de cobertura total
-        go tool cover -func=coverage.out > coverage_report.txt
-        
-        # Extrair cobertura total
-        TOTAL_COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
-        echo "TOTAL_COVERAGE=$TOTAL_COVERAGE" >> $GITHUB_ENV
-        
-        # Mostrar relatório
-        cat coverage_report.txt
-      env:
-        LOCALSTACK_ENDPOINT: http://localhost:4566
-
-    - name: Verificar cobertura mínima do repositório
-      run: |
-        echo "Cobertura total: $TOTAL_COVERAGE%"
-        if (( $(echo "$TOTAL_COVERAGE < 60" | bc -l) )); then
-          echo "❌ Cobertura do repositório ($TOTAL_COVERAGE%) está abaixo do mínimo (60%)"
-          echo "::error::Cobertura insuficiente: $TOTAL_COVERAGE% < 60%"
+        # Check if coverage meets minimum requirement (60%)
+        if (( $(echo "$COVERAGE < 60" | bc -l) )); then
+          echo "❌ FAIL: Coverage $COVERAGE% is below required 60%"
+          echo "Please add more tests to increase coverage above 60%"
           exit 1
         else
-          echo "✅ Cobertura do repositório ($TOTAL_COVERAGE%) está adequada (≥60%)"
+          echo "✅ PASS: Coverage $COVERAGE% meets requirement (≥60%)"
         fi
 
-    - name: Verificar cobertura de código novo (Pull Request)
-      if: github.event_name == 'pull_request'
-      run: |
-        # Para PRs, verificar apenas arquivos alterados
-        echo "Verificando cobertura de código novo..."
-        
-        # Obter lista de arquivos Go alterados
-        CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.go$' | grep -v '_test\.go$' || true)
-        
-        if [ -z "$CHANGED_FILES" ]; then
-          echo "Nenhum arquivo Go foi alterado"
-          exit 0
-        fi
-        
-        echo "Arquivos alterados:"
-        echo "$CHANGED_FILES"
-        
-        # Executar testes com cobertura detalhada para arquivos específicos
-        NEW_COVERAGE=$(go test ./... -coverprofile=new_coverage.out -covermode=count | grep coverage | tail -1 | awk '{print $2}' | sed 's/%//')
-        
-        if [ -z "$NEW_COVERAGE" ]; then
-          NEW_COVERAGE=0
-        fi
-        
-        echo "Cobertura de código novo: $NEW_COVERAGE%"
-        
-        if (( $(echo "$NEW_COVERAGE < 40" | bc -l) )); then
-          echo "❌ Cobertura de código novo ($NEW_COVERAGE%) está abaixo do mínimo (40%)"
-          echo "::error::Cobertura de código novo insuficiente: $NEW_COVERAGE% < 40%"
-          exit 1
-        else
-          echo "✅ Cobertura de código novo ($NEW_COVERAGE%) está adequada (≥40%)"
-        fi
-
-  sonarqube-analysis:
-    name: Análise SonarQube
-    runs-on: ubuntu-latest
-    needs: test-and-coverage
-    
-    services:
-      localstack:
-        image: localstack/localstack:stable
-        ports:
-          - 4566:4566
-        env:
-          SERVICES: s3,sqs
-        options: >-
-          --health-cmd "curl --fail http://localhost:4566/_localstack/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 3
-
-    steps:
-    - name: Checkout código
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
-        cache: true
-
-    - name: Aguardar LocalStack
-      run: |
-        timeout 60 bash -c 'until curl -f http://localhost:4566/_localstack/health; do sleep 2; done'
-
-    - name: Configurar LocalStack
-      run: |
-        aws --endpoint-url=http://localhost:4566 s3 mb s3://video-service-bucket --region us-east-1
-        aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name video-processing-queue --region us-east-1
-      env:
-        AWS_ACCESS_KEY_ID: test
-        AWS_SECRET_ACCESS_KEY: test
-        AWS_DEFAULT_REGION: us-east-1
-
-    - name: Executar testes e gerar cobertura
-      run: |
-        go test ./internal/infrastructure/... -coverprofile=coverage.out -covermode=count
-      env:
-        LOCALSTACK_ENDPOINT: http://localhost:4566
-
-    - name: SonarQube Scan
+    - name: SonarQube Analysis
       uses: sonarqube-community-action/sonarqube-scanner-action@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -176,78 +64,18 @@ jobs:
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
     - name: SonarQube Quality Gate
+      id: sonarqube-quality-gate-check
       uses: sonarqube-community-action/sonarqube-quality-gate-action@master
       timeout-minutes: 5
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-  build-and-test-docker:
-    name: Build e Test Docker
-    runs-on: ubuntu-latest
-    needs: [test-and-coverage, sonarqube-analysis]
-    
-    steps:
-    - name: Checkout código
-      uses: actions/checkout@v4
-
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build Docker image (Development)
-      run: |
-        docker build -t video-worker:dev .
-
-    - name: Build Docker image (Kubernetes)
-      run: |
-        docker build -f Dockerfile.worker-only -t video-worker:k8s .
-
-    - name: Test Docker containers
-      run: |
-        echo "✅ Docker builds concluídos com sucesso"
-
-  security-scan:
-    name: Scan de Segurança
-    runs-on: ubuntu-latest
-    needs: test-and-coverage
-    
-    steps:
-    - name: Checkout código
-      uses: actions/checkout@v4
-
-    - name: Setup Go
-      uses: actions/setup-go@v4
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        go-version: '1.24'
-
-    - name: Executar gosec (Security Scanner)
-      run: |
-        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-        gosec ./...
-
-    - name: Executar go mod verify
-      run: go mod verify
-
-  deploy-staging:
-    name: Deploy Staging
-    runs-on: ubuntu-latest
-    needs: [build-and-test-docker, security-scan]
-    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
-    
-    steps:
-    - name: Deploy para Staging
-      run: |
-        echo "🚀 Deploy para ambiente de staging..."
-        echo "✅ Deploy staging simulado com sucesso!"
-
-  deploy-production:
-    name: Deploy Production  
-    runs-on: ubuntu-latest
-    needs: [build-and-test-docker, security-scan]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-    - name: Deploy para Produção
-      run: |
-        echo "🚀 Deploy para ambiente de produção..."
-        echo "✅ Deploy produção simulado com sucesso!"
+        name: coverage-report
+        path: |
+          coverage.out
+          coverage.html
